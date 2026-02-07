@@ -37,7 +37,7 @@ class Hand:
                 sum += settings.values[card.rank]
             if sum <= 21:
                 self.value = sum
-                return f'5-of-a-kind ({sum})'
+                return f'5-Card Charlie ({sum})'
         return None
     
     def clear(self):

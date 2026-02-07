@@ -2,6 +2,7 @@ from entities.Player import Player, InsufficientChipsError
 from entities.Dealer import Dealer
 from models.Deck import Deck
 from config import settings
+from ai.agent import QLearningAgent
 import os, time, pygame
 
 class Game:
@@ -47,6 +48,15 @@ class Game:
         # Load card back
         self.card_back = pygame.image.load('assets\\cards\\cardback.png')
         self.card_back = pygame.transform.scale(self.card_back, (100, 145))
+        
+        # Load AI agent for dealer
+        self.dealer_ai = QLearningAgent()
+        ai_path = os.path.join('ai', 'data', 'q_table.npy')
+        if os.path.exists(ai_path):
+            self.dealer_ai.load(ai_path)
+            self.use_ai_dealer = True
+        else:
+            self.use_ai_dealer = False
         
         # Game state
         self.game_message = ""
@@ -174,6 +184,50 @@ class Game:
     def draw_table(self):
         self.win.blit(self.bg, (0,0))
         pygame.display.update()
+    
+    def _get_dealer_state(self):
+        """Get dealer state for AI agent (from dealer's perspective)"""
+        dealer_value = self.dealer.hand.value
+        player_showing = settings.values[self.player.hand.cards[0].rank] if len(self.player.hand.cards) > 0 else 0
+        dealer_num_cards = self.dealer.hand.num_of_cards()
+        
+        usable_ace = 0
+        for card in self.dealer.hand.cards:
+            if card.rank == 'Ace' and dealer_value - 11 >= 0:
+                usable_ace = 1
+                break
+        
+        return (dealer_value, player_showing, dealer_num_cards, usable_ace)
+    
+    def _dealer_ai_turn(self):
+        """Let AI dealer play until it decides to stand or busts/reaches 5 cards"""
+        while self.dealer.hand.num_of_cards() < 5 and not self.dealer.is_bust():
+            state = self._get_dealer_state()
+
+            valid_actions = []
+            if self.dealer.get_value() >= 16:
+                valid_actions.append(1)  # Can STAND
+            if self.dealer.hand.num_of_cards() < 5 and self.dealer.get_value() <= 21:
+                valid_actions.append(0)  # Can HIT
+            
+            if not valid_actions or self.dealer.get_value() < 16:
+                valid_actions = [0]  # Must HIT
+            
+            # Get AI decision
+            action = self.dealer_ai.get_action(state, valid_actions=valid_actions, training=False)
+            
+            if action == 0:  # HIT
+                self.dealer.hit(self.deck)
+                self.dealer_special_case = self.dealer.hand.special_cases()
+                self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
+                pygame.display.update()
+                pygame.time.wait(1000)
+                
+                # Check for special cases or bust
+                if self.dealer_special_case or self.dealer.is_bust() or self.dealer.hand.num_of_cards() >= 5:
+                    break
+            else:  # STAND
+                break
 
     def show_tutorial(self):
         viewing_tutorial = True
@@ -198,7 +252,14 @@ class Game:
         
         while waiting_start:
             self.win.blit(self.bg, (0, 0))
-            self.draw_text('Welcome to BlackJack', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 50, center=True)
+            self.draw_text('Welcome to BlackJack', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 100, center=True)
+            
+            # Display dealer type
+            if self.use_ai_dealer:
+                self.draw_text('AI Dealer Mode', self.font_small, self.GREEN, self.width // 2, self.height // 2 - 50, center=True)
+            else:
+                self.draw_text('Rule-Based Dealer Mode', self.font_small, self.GRAY, self.width // 2, self.height // 2 - 50, center=True)
+            
             start_clicked = self.draw_button("Start Game", self.width // 2 - 100, self.height // 2 + 50, 200, 60, self.GREEN, self.GRAY)
             tutorial_clicked = self.draw_button("Tutorial", self.width // 2 - 100, self.height // 2 + 130, 200, 60, self.BLUE, self.GRAY)
             
@@ -286,7 +347,7 @@ class Game:
                                     # Player wins immediately
                                     self.show_dealer_cards = True
                                     self.dealer_special_case = self.dealer.hand.special_cases()
-                                    self.player.earn(2 * chip)
+                                    self.player.earn(int(2.5 * chip))
                                     self.result_message = "Player wins!"
                                     self.game_over_state = True
                                     self.waiting_for_action = False
@@ -364,53 +425,83 @@ class Game:
                 if self.dealer_special_case is not None:
                     dealer_wins = True
                 else:
-                    if self.player.is_bust():
-                        while self.dealer.get_value() < 17 and self.dealer.hand.num_of_cards() < 5:
-                            self.dealer.hit(self.deck)
-                            self.dealer_special_case = self.dealer.hand.special_cases()
-                            self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
-                            pygame.display.update()
-                            pygame.time.wait(1000)
-                        
-                        if self.dealer.get_value() > 21:
-                            tie = True
-                        else:
-                            dealer_wins = True
-                    
-                    elif self.player_special_case is None:
-                        while self.dealer.get_value() <= self.player.get_value() and self.dealer.hand.num_of_cards() < 5:
-                            self.dealer.hit(self.deck)
-                            self.dealer_special_case = self.dealer.hand.special_cases()
-                            self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
-                            pygame.display.update()
-                            pygame.time.wait(1000)
-                        
-                        if self.dealer.get_value() > 21:
-                            player_wins = True
-                        else:
-                            dealer_wins = True
-                    
+                    # Use AI dealer if trained model is available
+                    if self.use_ai_dealer:
+                        self._dealer_ai_turn()
                     else:
-                        while not self.dealer.is_bust() and self.dealer.hand.num_of_cards() < 5:
-                            self.dealer.hit(self.deck)
-                            self.dealer_special_case = self.dealer.hand.special_cases()
-                            self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
-                            pygame.display.update()
-                            pygame.time.wait(1000)
+                        # Fallback to rule-based dealer
+                        if self.player.is_bust():
+                            while self.dealer.get_value() < 17 and self.dealer.hand.num_of_cards() < 5:
+                                self.dealer.hit(self.deck)
+                                self.dealer_special_case = self.dealer.hand.special_cases()
+                                self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
+                                pygame.display.update()
+                                pygame.time.wait(1000)
                         
-                        if self.dealer.is_bust() or self.player.get_value() < self.dealer.get_value():
-                            player_wins = True
-                        elif self.dealer.get_value() == self.player.get_value():
-                            tie = True
+                        elif self.player_special_case is None:
+                            while self.dealer.get_value() <= self.player.get_value() and self.dealer.hand.num_of_cards() < 5:
+                                self.dealer.hit(self.deck)
+                                self.dealer_special_case = self.dealer.hand.special_cases()
+                                self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
+                                pygame.display.update()
+                                pygame.time.wait(1000)
+                        
                         else:
+                            while not self.dealer.is_bust() and self.dealer.hand.num_of_cards() < 5:
+                                self.dealer.hit(self.deck)
+                                self.dealer_special_case = self.dealer.hand.special_cases()
+                                self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
+                                pygame.display.update()
+                                pygame.time.wait(1000)
+                    
+                    player_val = self.player.get_value()
+                    dealer_val = self.dealer.get_value()
+
+                    player_is_bust = self.player.is_bust()
+                    dealer_is_bust = self.dealer.is_bust()
+
+                    player_has_5_charlie = self.player_special_case is not None and '5-Card Charlie' in self.player_special_case
+                    dealer_has_5_charlie = self.dealer_special_case is not None and '5-Card Charlie' in self.dealer_special_case
+
+                    # Bust cases
+                    if player_is_bust and dealer_is_bust:
+                        tie = True
+                    elif player_is_bust:
+                        dealer_wins = True
+                    elif dealer_is_bust:
+                        player_wins = True
+
+                    # 5-Card Charlie cases
+                    elif player_has_5_charlie and dealer_has_5_charlie:
+                        if player_val < dealer_val:
+                            player_wins = True
+                        elif player_val > dealer_val:
                             dealer_wins = True
+                        else:
+                            tie = True
+                    elif player_has_5_charlie:
+                        player_wins = True
+                    elif dealer_has_5_charlie:
+                        dealer_wins = True
+
+                    # Normal cases
+                    else:
+                        if player_val > dealer_val:
+                            player_wins = True
+                        elif dealer_val > player_val:
+                            dealer_wins = True
+                        else:
+                            tie = True
                 
                 # Determine result
                 if player_wins:
-                    self.player.earn(2 * self.current_bet)
+                    if self.player_special_case:
+                        self.player.earn(int(2.5 * self.current_bet))
+                    else:
+                        self.player.earn(int(2 * self.current_bet))
                     self.result_message = 'Player wins!'
                 elif tie:
-                    self.player.earn(self.current_bet)
+                    self.player.earn(int(self.current_bet))
                     self.result_message = 'Tie!'
                 else:
                     self.result_message = 'Dealer wins!'

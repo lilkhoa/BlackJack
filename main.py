@@ -1,4 +1,4 @@
-from Game import Game
+from game.Game import Game
 
 if __name__ == '__main__':
     new_game = Game()

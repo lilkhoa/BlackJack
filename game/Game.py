@@ -1,6 +1,6 @@
-from Player import Player, InsufficientChipsError
-from Dealer import Dealer
-from Deck import Deck
+from entities.Player import Player, InsufficientChipsError
+from entities.Dealer import Dealer
+from models.Deck import Deck
 import os, time, pygame
 
 def clear_terminal():
@@ -15,14 +15,14 @@ class Game:
         self.deck = Deck()
 
         # Pygame
-        pygame.init()
-        self.size = (800, 600)
-        self.win = pygame.display.set_mode((self.size))
-        pygame.display.set_caption('BlackJack Game')
+        # pygame.init()
+        # self.size = (800, 600)
+        # self.win = pygame.display.set_mode((self.size))
+        # pygame.display.set_caption('BlackJack Game')
 
         # Background
-        self.bg_img = pygame.image.load('D:\\python\\Blackjack\\assets\\bg.jpg')
-        self.bg = pygame.transform.scale(self.bg_img, self.size)
+        # self.bg_img = pygame.image.load('D:\\python\\Blackjack\\assets\\bg.jpg')
+        # self.bg = pygame.transform.scale(self.bg_img, self.size)
 
     def display_table(self, show_dealer: bool, player_special_case=None, dealer_special_case=None):
         clear_terminal()

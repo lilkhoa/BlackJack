@@ -1,6 +1,6 @@
-from Deck import Deck
-from Hand import Hand
-import variables
+from models.Deck import Deck
+from models.Hand import Hand
+from config import settings
 
 class Bot:
 

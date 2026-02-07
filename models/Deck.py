@@ -1,12 +1,13 @@
-import random, variables
-from Card import Card
+import random
+from config import settings
+from models.Card import Card
 
 class Deck:
 
     def __init__(self):
         self.cards = []
-        for rank in variables.ranks:
-            for suit in variables.suits:
+        for rank in settings.ranks:
+            for suit in settings.suits:
                 self.cards.append(Card(suit, rank))
     
     def shuffle(self):

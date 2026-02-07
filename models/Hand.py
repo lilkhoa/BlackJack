@@ -1,17 +1,17 @@
-from Deck import Deck
-import variables
+from models.Deck import Deck
+from config import settings
 
 class Hand:
     
     def __init__(self):
-        self.cards = []  # start with an empty list as we did in the Deck class
-        self.value = 0   # start with zero value
+        self.cards = []
+        self.value = 0
     
     def add_card(self,card):
         self.cards.append(card)
 
-        if card.rank != variables.ranks[-1]:
-            self.value += variables.values[card.rank]
+        if card.rank != settings.ranks[-1]:
+            self.value += settings.values[card.rank]
         else:
             self.value += self.adjust_for_ace()
     
@@ -27,14 +27,14 @@ class Hand:
     def special_cases(self):
         if self.num_of_cards() == 2:
             first_card, second_card = self.cards[0], self.cards[1]
-            if (first_card.rank in variables.ranks[8:12] and second_card.rank == variables.ranks[-1]) or (second_card.rank in variables.ranks[8:12] and first_card.rank == variables.ranks[-1]):
+            if (first_card.rank in settings.ranks[8:12] and second_card.rank == settings.ranks[-1]) or (second_card.rank in settings.ranks[8:12] and first_card.rank == settings.ranks[-1]):
                 return 'BlackJack'
-            elif first_card.rank == variables.ranks[-1] and second_card.rank == variables.ranks[-1]:
+            elif first_card.rank == settings.ranks[-1] and second_card.rank == settings.ranks[-1]:
                 return 'DoubleAces'
         elif self.num_of_cards() == 5:
             sum = 0
             for card in self.cards:
-                sum += variables.values[card.rank]
+                sum += settings.values[card.rank]
             if sum <= 21:
                 self.value = sum
                 return f'5-of-a-kind ({sum})'

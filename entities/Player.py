@@ -1,7 +1,7 @@
-from Deck import Deck
-from Hand import Hand
-from Bot import Bot
-import variables
+from models.Deck import Deck
+from models.Hand import Hand
+from entities.Bot import Bot
+from config import settings
 
 class InsufficientChipsError(Exception):
     """Raised when the player doesn't have enough chips to bet"""

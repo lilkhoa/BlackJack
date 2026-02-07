@@ -25,6 +25,7 @@ class Game:
         self.RED = (200, 0, 0)
         self.GOLD = (255, 215, 0)
         self.GRAY = (128, 128, 128)
+        self.BLUE = (0, 0, 255)
         
         # Fonts
         self.font_large = pygame.font.Font(None, 48)
@@ -34,6 +35,10 @@ class Game:
         # Load background
         self.bg_img = pygame.image.load('assets\\bg.jpg')
         self.bg = pygame.transform.scale(self.bg_img, (self.width, self.height))
+
+        # Load tutorial image
+        self.tutorial_img = pygame.image.load('assets\\tutorial.png')
+        self.tutorial_img = pygame.transform.scale(self.tutorial_img, (self.width, self.height))
         
         # Load card images
         self.card_images = {}
@@ -165,36 +170,50 @@ class Game:
         # Draw game message if any
         if self.game_message:
             self.draw_text(self.game_message, self.font_medium, self.WHITE, self.width // 2, 350, center=True)
-
-    def game_start(self):
-        """Display welcome screen"""
-        self.win.blit(self.bg, (0, 0))
-        self.draw_text('Welcome to BlackJack', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 50, center=True)
-        self.draw_text('Click anywhere to start', self.font_medium, self.WHITE, self.width // 2, self.height // 2 + 50, center=True)
-        pygame.display.update()
-
-
-    def game_end(self):
-        """Show game end screen and check if player wants to continue"""
-        pass
     
     def draw_table(self):
         self.win.blit(self.bg, (0,0))
         pygame.display.update()
-    
-    def play(self):
-        """Main game loop with pygame"""
-        # Show welcome screen
-        self.game_start()
-        waiting_start = True
+
+    def show_tutorial(self):
+        viewing_tutorial = True
         
-        while waiting_start:
+        while viewing_tutorial:
+            self.win.blit(self.tutorial_img, (0, 0))
+            back_clicked = self.draw_button("Back", 50, 50, 150, 50, self.RED, self.GRAY)
+            
+            pygame.display.update()
+            
+            if back_clicked:
+                viewing_tutorial = False
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    waiting_start = False
+    
+    def play(self):
+        """Main game loop with pygame"""
+        waiting_start = True
+        
+        while waiting_start:
+            self.win.blit(self.bg, (0, 0))
+            self.draw_text('Welcome to BlackJack', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 50, center=True)
+            start_clicked = self.draw_button("Start Game", self.width // 2 - 100, self.height // 2 + 50, 200, 60, self.GREEN, self.GRAY)
+            tutorial_clicked = self.draw_button("Tutorial", self.width // 2 - 100, self.height // 2 + 130, 200, 60, self.BLUE, self.GRAY)
+            
+            pygame.display.update()
+
+            if start_clicked:
+                waiting_start = False
+            
+            if tutorial_clicked:
+                self.show_tutorial()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
         
         running = True
         game_active = True

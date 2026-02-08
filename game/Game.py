@@ -1,6 +1,8 @@
 from entities.Player import Player, InsufficientChipsError
 from entities.Dealer import Dealer
 from models.Deck import Deck
+from managers.ResoureManager import ResourceManager
+from managers.UIManager import UIManager
 from config import settings
 from ai.agent import QLearningAgent
 import os, time, pygame
@@ -14,40 +16,30 @@ class Game:
 
         # Pygame initialization
         pygame.init()
-        self.width, self.height = 1280, 720
+        self.width, self.height = settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT
         self.win = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption('BlackJack Game')
         self.clock = pygame.time.Clock()
-        
-        # Colors
-        self.WHITE = (255, 255, 255)
-        self.BLACK = (0, 0, 0)
-        self.GREEN = (0, 150, 0)
-        self.RED = (200, 0, 0)
-        self.GOLD = (255, 215, 0)
-        self.GRAY = (128, 128, 128)
-        self.BLUE = (0, 0, 255)
-        
-        # Fonts
-        self.font_large = pygame.font.Font(None, 48)
-        self.font_medium = pygame.font.Font(None, 36)
-        self.font_small = pygame.font.Font(None, 28)
-        
-        # Load background
-        self.bg_img = pygame.image.load('assets\\bg.jpg')
-        self.bg = pygame.transform.scale(self.bg_img, (self.width, self.height))
 
-        # Load tutorial image
-        self.tutorial_img = pygame.image.load('assets\\tutorial.png')
-        self.tutorial_img = pygame.transform.scale(self.tutorial_img, (self.width, self.height))
-        
-        # Load card images
-        self.card_images = {}
-        self.load_card_images()
-        
-        # Load card back
-        self.card_back = pygame.image.load('assets\\cards\\cardback.png')
-        self.card_back = pygame.transform.scale(self.card_back, (100, 145))
+        # Load resources
+        self.resource_manager = ResourceManager()
+        self.font_large = self.resource_manager.fonts['primary_large']
+        self.font_medium = self.resource_manager.fonts['primary_medium']
+        self.font_small = self.resource_manager.fonts['primary_small']
+        self.chip_font = self.resource_manager.fonts['chips']
+        self.bg = self.resource_manager.images['bg']
+        self.tutorial_img = self.resource_manager.images['tutorial_img']
+        self.card_back = self.resource_manager.images['card_back']
+        self.card_images = self.resource_manager.card_images
+
+        # Load UI
+        self.ui_manager = UIManager(self.win, ResourceManager())
+        self.WHITE = settings.WHITE
+        self.GREEN = settings.GREEN
+        self.RED = settings.RED
+        self.GOLD = settings.GOLD
+        self.GRAY = settings.GRAY
+        self.BLUE = settings.BLUE
         
         # Load AI agent for dealer
         self.dealer_ai = QLearningAgent()
@@ -66,124 +58,55 @@ class Game:
         self.betting_phase = True
         self.bet_input = ""
         self.result_message = ""
-        
-    def load_card_images(self):
-        """Load all card images from assets folder"""
-        rank_map = {
-            'Two': '2', 'Three': '3', 'Four': '4', 'Five': '5',
-            'Six': '6', 'Seven': '7', 'Eight': '8', 'Nine': '9',
-            'Ten': '10', 'Jack': 'jack', 'Queen': 'queen', 
-            'King': 'king', 'Ace': 'ace'
-        }
-        
-        suit_map = {
-            'Hearts': 'hearts',
-            'Diamonds': 'diamonds',
-            'Spades': 'spades',
-            'Clubs': 'clubs'
-        }
-        
-        for rank in settings.ranks:
-            for suit in settings.suits:
-                rank_folder = rank_map[rank]
-                file_name = f"{rank_map[rank]}_of_{suit_map[suit]}.png"
-                path = f"assets\\cards\\{rank_folder}\\{file_name}"
-                
-                try:
-                    img = pygame.image.load(path)
-                    img = pygame.transform.scale(img, (100, 145))
-                    self.card_images[f"{rank} of {suit}"] = img
-                except:
-                    print(f"Error loading: {path}")
 
-    def draw_card(self, card, x, y):
-        """Draw a card at specified position"""
-        card_str = str(card)
-        if card_str in self.card_images:
-            self.win.blit(self.card_images[card_str], (x, y))
-    
-    def draw_text(self, text, font, color, x, y, center=False):
-        """Draw text at specified position"""
-        text_surface = font.render(text, True, color)
-        if center:
-            text_rect = text_surface.get_rect(center=(x, y))
-            self.win.blit(text_surface, text_rect)
-        else:
-            self.win.blit(text_surface, (x, y))
-    
-    def draw_button(self, text, x, y, width, height, color, hover_color, action=None):
-        """Draw a button and check if it's clicked"""
-        mouse = pygame.mouse.get_pos()
-        click = pygame.mouse.get_pressed()
-        
-        button_rect = pygame.Rect(x, y, width, height)
-        
-        if button_rect.collidepoint(mouse):
-            pygame.draw.rect(self.win, hover_color, button_rect, border_radius=10)
-            if click[0] == 1:
-                if action:
-                    action()
-                return True
-        else:
-            pygame.draw.rect(self.win, color, button_rect, border_radius=10)
-        
-        pygame.draw.rect(self.win, self.BLACK, button_rect, 3, border_radius=10)
-        self.draw_text(text, self.font_medium, self.WHITE, x + width//2, y + height//2, center=True)
-        
-        return False
-    
     def display_table(self, show_dealer: bool, player_special_case=None, dealer_special_case=None):
         """Draw the game table with pygame"""
-        self.win.blit(self.bg, (0, 0))
+        self.win.blit(self.resource_manager.images['bg'], (0, 0))
         
         # Draw dealer's cards
         dealer_x = 100
         dealer_y = 100
-        self.draw_text("Dealer's Hand:", self.font_medium, self.WHITE, dealer_x, dealer_y - 40)
+        self.ui_manager.draw_text("Dealer's Hand:", self.resource_manager.fonts['primary_small'], self.WHITE, dealer_x, dealer_y - 40)
         
         if not show_dealer:
             # Show only first card, hide second
             if len(self.dealer.hand.cards) > 0:
-                self.draw_card(self.dealer.hand.cards[0], dealer_x, dealer_y)
+                self.ui_manager.draw_card(self.dealer.hand.cards[0], dealer_x, dealer_y)
             if len(self.dealer.hand.cards) > 1:
-                self.win.blit(self.card_back, (dealer_x + 110, dealer_y))
+                self.win.blit(self.resource_manager.images['card_back'], (dealer_x + 110, dealer_y))
             # Draw remaining cards if any
             for i in range(2, len(self.dealer.hand.cards)):
-                self.win.blit(self.card_back, (dealer_x + 110 * i, dealer_y))
-            self.draw_text("Value: ???", self.font_small, self.WHITE, dealer_x, dealer_y + 160)
+                self.win.blit(self.resource_manager.images['card_back'], (dealer_x + 110 * i, dealer_y))
+            self.ui_manager.draw_text("Value: ???", self.resource_manager.fonts['primary_small'], self.WHITE, dealer_x, dealer_y + 160)
         else:
             # Show all dealer cards
             for i, card in enumerate(self.dealer.hand.cards):
-                self.draw_card(card, dealer_x + 110 * i, dealer_y)
+                self.ui_manager.draw_card(card, dealer_x + 110 * i, dealer_y)
             
             if dealer_special_case:
-                self.draw_text(f"Value: {dealer_special_case}", self.font_small, self.GOLD, dealer_x, dealer_y + 160)
+                self.ui_manager.draw_text(f"Value: {dealer_special_case}", self.resource_manager.fonts['primary_small'], self.GOLD, dealer_x, dealer_y + 160)
             else:
-                self.draw_text(f"Value: {self.dealer.get_value()}", self.font_small, self.WHITE, dealer_x, dealer_y + 160)
+                self.ui_manager.draw_text(f"Value: {self.dealer.get_value()}", self.resource_manager.fonts['primary_small'], self.WHITE, dealer_x, dealer_y + 160)
         
         # Draw player's cards
         player_x = 100
         player_y = 450
-        self.draw_text("Your Hand:", self.font_medium, self.WHITE, player_x, player_y - 40)
+        self.ui_manager.draw_text("Your Hand:", self.resource_manager.fonts['primary_small'], self.WHITE, player_x, player_y - 40)
         
         for i, card in enumerate(self.player.hand.cards):
-            self.draw_card(card, player_x + 110 * i, player_y)
+            self.ui_manager.draw_card(card, player_x + 110 * i, player_y)
         
         if player_special_case:
-            self.draw_text(f"Value: {player_special_case}", self.font_small, self.GOLD, player_x, player_y + 160)
+            self.ui_manager.draw_text(f"Value: {player_special_case}", self.resource_manager.fonts['primary_small'], self.GOLD, player_x, player_y + 160)
         else:
-            self.draw_text(f"Value: {self.player.get_value()}", self.font_small, self.WHITE, player_x, player_y + 160)
+            self.ui_manager.draw_text(f"Value: {self.player.get_value()}", self.resource_manager.fonts['primary_small'], self.WHITE, player_x, player_y + 160)
         
         # Draw chip information
-        self.draw_text(f"Chips: {self.player.chips}", self.font_medium, self.GOLD, self.width - 250, 50)
+        self.ui_manager.draw_text(f"Chips: {self.player.chips}", self.resource_manager.fonts['primary_small'], self.GOLD, self.width - 250, 50)
         
         # Draw game message if any
         if self.game_message:
-            self.draw_text(self.game_message, self.font_medium, self.WHITE, self.width // 2, 350, center=True)
-    
-    def draw_table(self):
-        self.win.blit(self.bg, (0,0))
-        pygame.display.update()
+            self.ui_manager.draw_text(self.game_message, self.resource_manager.fonts['primary_small'], self.WHITE, self.width // 2, 350, center=True)
     
     def _get_dealer_state(self):
         """Get dealer state for AI agent (from dealer's perspective)"""
@@ -228,23 +151,6 @@ class Game:
                     break
             else:  # STAND
                 break
-
-    def show_tutorial(self):
-        viewing_tutorial = True
-        
-        while viewing_tutorial:
-            self.win.blit(self.tutorial_img, (0, 0))
-            back_clicked = self.draw_button("Back", 50, 50, 150, 50, self.RED, self.GRAY)
-            
-            pygame.display.update()
-            
-            if back_clicked:
-                viewing_tutorial = False
-            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return
     
     def play(self):
         """Main game loop with pygame"""
@@ -252,16 +158,10 @@ class Game:
         
         while waiting_start:
             self.win.blit(self.bg, (0, 0))
-            self.draw_text('Welcome to BlackJack', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 100, center=True)
+            self.ui_manager.draw_text('Welcome to BlackJack', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 100, center=True)
             
-            # Display dealer type
-            if self.use_ai_dealer:
-                self.draw_text('AI Dealer Mode', self.font_small, self.GREEN, self.width // 2, self.height // 2 - 50, center=True)
-            else:
-                self.draw_text('Rule-Based Dealer Mode', self.font_small, self.GRAY, self.width // 2, self.height // 2 - 50, center=True)
-            
-            start_clicked = self.draw_button("Start Game", self.width // 2 - 100, self.height // 2 + 50, 200, 60, self.GREEN, self.GRAY)
-            tutorial_clicked = self.draw_button("Tutorial", self.width // 2 - 100, self.height // 2 + 130, 200, 60, self.BLUE, self.GRAY)
+            start_clicked = self.ui_manager.draw_button("Start Game", self.width // 2 - 100, self.height // 2 + 50, 200, 60, self.GREEN, self.GRAY)
+            tutorial_clicked = self.ui_manager.draw_button("Tutorial", self.width // 2 - 100, self.height // 2 + 130, 200, 60, self.BLUE, self.GRAY)
             
             pygame.display.update()
 
@@ -269,7 +169,7 @@ class Game:
                 waiting_start = False
             
             if tutorial_clicked:
-                self.show_tutorial()
+                self.ui_manager.show_tutorial()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -285,9 +185,9 @@ class Game:
             # Check if player has chips
             if self.player.chips == 0 and not game_active:
                 self.win.blit(self.bg, (0, 0))
-                self.draw_text('You do not have any chips.', self.font_large, self.RED, self.width // 2, self.height // 2 - 50, center=True)
-                self.draw_text('Game Over', self.font_large, self.RED, self.width // 2, self.height // 2 + 50, center=True)
-                quit = self.draw_button("Quit", self.width // 2 - 75, self.height // 2 + 150, 150, 50, self.RED, self.GRAY)
+                self.ui_manager.draw_text('You do not have any chips.', self.font_large, self.RED, self.width // 2, self.height // 2 - 50, center=True)
+                self.ui_manager.draw_text('Game Over', self.font_large, self.RED, self.width // 2, self.height // 2 + 50, center=True)
+                quit = self.ui_manager.draw_button("Quit", self.width // 2 - 75, self.height // 2 + 150, 150, 50, self.RED, self.GRAY)
                 pygame.display.update()
                 
                 for event in pygame.event.get():
@@ -306,12 +206,12 @@ class Game:
                 self.win.blit(self.bg, (0, 0))
                 
                 # Show betting interface
-                self.draw_text(f'Chips: {self.player.chips}', self.font_medium, self.GOLD, self.width // 2, 200, center=True)
-                self.draw_text('Enter bet amount:', self.font_medium, self.WHITE, self.width // 2, 300, center=True)
-                self.draw_text(self.bet_input, self.font_large, self.GOLD, self.width // 2, 360, center=True)
+                self.ui_manager.draw_text(f'Chips: {self.player.chips}', self.font_medium, self.GOLD, self.width // 2, 200, center=True)
+                self.ui_manager.draw_text('Enter bet amount:', self.font_medium, self.WHITE, self.width // 2, 300, center=True)
+                self.ui_manager.draw_text(self.bet_input, self.font_large, self.GOLD, self.width // 2, 360, center=True)
                 
                 if self.game_message:
-                    self.draw_text(self.game_message, self.font_small, self.RED, self.width // 2, 450, center=True)
+                    self.ui_manager.draw_text(self.game_message, self.font_small, self.RED, self.width // 2, 450, center=True)
                 
                 pygame.display.update()
                 
@@ -376,16 +276,16 @@ class Game:
                 deck_x = self.width - 250
                 deck_y = 350
                 self.win.blit(self.card_back, (deck_x, deck_y))
-                self.draw_text("Click deck", self.font_small, self.WHITE, deck_x + 50, deck_y + 160, center=True)
-                self.draw_text("to HIT", self.font_small, self.WHITE, deck_x + 50, deck_y + 185, center=True)
+                self.ui_manager.draw_text("Click deck", self.font_small, self.WHITE, deck_x + 50, deck_y + 160, center=True)
+                self.ui_manager.draw_text("to HIT", self.font_small, self.WHITE, deck_x + 50, deck_y + 185, center=True)
                 
                 # Draw stand button (only if player value >= 16)
                 if self.player.get_value() >= 16:
-                    stand_clicked = self.draw_button("STAND", self.width - 250, deck_y + 220, 100, 50, self.RED, self.GRAY)
+                    stand_clicked = self.ui_manager.draw_button("STAND", self.width - 250, deck_y + 220, 100, 50, self.RED, self.GRAY)
                 else:
                     # Show message that player must hit
-                    self.draw_text("Must HIT", self.font_small, self.RED, self.width - 250 + 50, deck_y + 240, center=True)
-                    self.draw_text("(Value < 16)", self.font_small, self.RED, self.width - 250 + 50, deck_y + 265, center=True)
+                    self.ui_manager.draw_text("Must HIT", self.font_small, self.RED, self.width - 250 + 50, deck_y + 240, center=True)
+                    self.ui_manager.draw_text("(Value < 16)", self.font_small, self.RED, self.width - 250 + 50, deck_y + 265, center=True)
                 
                 pygame.display.update()
                 for event in pygame.event.get():
@@ -514,11 +414,11 @@ class Game:
                 
                 # Draw result message
                 result_color = self.GOLD if 'Player wins' in self.result_message else (self.WHITE if 'Tie' in self.result_message else self.RED)
-                self.draw_text(self.result_message, self.font_large, result_color, self.width // 2, 350, center=True)
+                self.ui_manager.draw_text(self.result_message, self.font_large, result_color, self.width // 2, 350, center=True)
                 
                 # Draw play again button
-                play_again = self.draw_button("Play Again", self.width // 2 - 75, 420, 150, 50, self.GREEN, self.GRAY)
-                quit = self.draw_button("Quit", self.width // 2 - 75, 500, 150, 50, self.RED, self.GRAY)
+                play_again = self.ui_manager.draw_button("Play Again", self.width // 2 - 75, 420, 150, 50, self.GREEN, self.GRAY)
+                quit = self.ui_manager.draw_button("Quit", self.width // 2 - 75, 500, 150, 50, self.RED, self.GRAY)
                 
                 pygame.display.update()
                 
@@ -547,8 +447,8 @@ class Game:
         
         # Game ended
         self.win.blit(self.bg, (0, 0))
-        self.draw_text(f'Your total chips: {self.player.chips}', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 50, center=True)
-        self.draw_text('Thank you for playing!', self.font_large, self.WHITE, self.width // 2, self.height // 2 + 50, center=True)
+        self.ui_manager.draw_text(f'Your total chips: {self.player.chips}', self.font_large, self.GOLD, self.width // 2, self.height // 2 - 50, center=True)
+        self.ui_manager.draw_text('Thank you for playing!', self.font_large, self.WHITE, self.width // 2, self.height // 2 + 50, center=True)
         pygame.display.update()
         pygame.time.wait(3000)
         

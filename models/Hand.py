@@ -20,13 +20,8 @@ class Hand:
                 return 'BlackJack'
             elif first_card.rank == settings.ranks[-1] and second_card.rank == settings.ranks[-1]:
                 return 'DoubleAces'
-        elif self.num_of_cards() == 5:
-            sum = 0
-            for card in self.cards:
-                sum += settings.values[card.rank]
-            if sum <= 21:
-                self.value = sum
-                return f'5-Card Charlie ({sum})'
+        elif self.num_of_cards() == 5 and self.value <= 21:
+            return f'5-Card Charlie ({self.value})'
         return None
     
     def _cal_value(self):

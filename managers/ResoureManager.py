@@ -35,6 +35,31 @@ class ResourceManager:
         bg_music.set_volume(0.5)
         self.sounds['bg_music'] = bg_music
 
+        # Button click
+        button_click = pygame.mixer.Sound('assets\\sounds\\button_press.mp3')
+        button_click.set_volume(0.7)
+        self.sounds['button_click'] = button_click
+
+        # Hit card
+        hit_card = pygame.mixer.Sound('assets\\sounds\\hit_card.mp3')
+        hit_card.set_volume(0.7)
+        self.sounds['hit_card'] = hit_card
+
+        # Win sound
+        win_sound = pygame.mixer.Sound('assets\\sounds\\win.wav')
+        win_sound.set_volume(0.7)
+        self.sounds['win_sound'] = win_sound
+
+        # Lose sound
+        lose_sound = pygame.mixer.Sound('assets\\sounds\\lose.wav')
+        lose_sound.set_volume(0.7)
+        self.sounds['lose_sound'] = lose_sound
+
+        # Tie sound
+        tie_sound = pygame.mixer.Sound('assets\\sounds\\tie.wav')
+        tie_sound.set_volume(0.7)
+        self.sounds['tie_sound'] = tie_sound
+
     def _load_card_images(self):
         """Load all card images from assets folder"""
         rank_map = {
@@ -64,10 +89,10 @@ class ResourceManager:
                 except:
                     print(f"Error loading: {path}")
 
-    def play_sound(self, sound_key, loop=False):
+    def play_sound(self, sound_key, loop=False, maxtime=0):
         """Play a sound effect"""
         if sound_key in self.sounds:
-            self.sounds[sound_key].play(-1 if loop else 0)
+            self.sounds[sound_key].play(-1 if loop else 0, maxtime=maxtime)
 
     def stop_sound(self, sound_key):
         """Stop a sound effect"""

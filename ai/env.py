@@ -52,12 +52,15 @@ class BlackjackEnv:
         dealer_showing = settings.values[self.dealer_hand.cards[0].rank]
         player_num_cards = self.player_hand.num_of_cards()
         
-        # Check if player has usable ace (ace counted as 11)
         usable_ace = 0
-        for card in self.player_hand.cards:
-            if card.rank == 'Ace' and player_value - 11 >= 0:
+        num_aces = sum(1 for card in self.player_hand.cards if card.rank == 'Ace')
+        if num_aces > 0:
+            value_aces_as_1 = sum(
+                1 if card.rank == 'Ace' else settings.values[card.rank] 
+                for card in self.player_hand.cards
+            )
+            if player_value > value_aces_as_1:
                 usable_ace = 1
-                break
         
         return (player_value, dealer_showing, player_num_cards, usable_ace)
     
@@ -115,41 +118,31 @@ class BlackjackEnv:
     def _play_dealer_and_get_reward(self, player_special_case=None):
         """
         Let dealer play and determine the reward
+        Matches EXACT logic from Game.py lines 326-414
         
         Returns:
             int: 1 = player wins, 0 = tie, -1 = player loses
         """
         dealer_special = self.dealer_hand.special_cases()
         
+        # Dealer has initial special case - dealer wins immediately
         if dealer_special is not None:
             return -1
         
-        # Player bust scenario
+        # Dealer plays based on player's state
         if self.player_hand.value > 21:
             while self.dealer_hand.value < 17 and self.dealer_hand.num_of_cards() < 5:
                 self.dealer_hand.add_card(self.deck.deal())
                 dealer_special = self.dealer_hand.special_cases()
                 if dealer_special:
                     break
-            
-            if self.dealer_hand.value > 21:
-                return 0
-            else:
-                return -1
         
-        # Player didn't bust
         elif player_special_case is None:
             while self.dealer_hand.value <= self.player_hand.value and self.dealer_hand.num_of_cards() < 5:
                 self.dealer_hand.add_card(self.deck.deal())
                 dealer_special = self.dealer_hand.special_cases()
                 if dealer_special:
                     break
-            
-            # Determine winner
-            if self.dealer_hand.value > 21:
-                return 1
-            else:
-                return -1
         
         else:
             while not self.dealer_hand.value > 21 and self.dealer_hand.num_of_cards() < 5:
@@ -157,13 +150,42 @@ class BlackjackEnv:
                 dealer_special = self.dealer_hand.special_cases()
                 if dealer_special:
                     break
-            
-            if self.dealer_hand.value > 21 or self.player_hand.value < self.dealer_hand.value:
+        
+        player_val = self.player_hand.value
+        dealer_val = self.dealer_hand.value
+        
+        player_is_bust = self.player_hand.value > 21
+        dealer_is_bust = self.dealer_hand.value > 21
+        
+        player_has_5_charlie = player_special_case is not None and '5-Card Charlie' in str(player_special_case)
+        dealer_has_5_charlie = dealer_special is not None and '5-Card Charlie' in str(dealer_special)
+        
+        if player_is_bust and dealer_is_bust:
+            return 0
+        elif player_is_bust:
+            return -1
+        elif dealer_is_bust:
+            return 1
+        
+        elif player_has_5_charlie and dealer_has_5_charlie:
+            if player_val < dealer_val:
                 return 1
-            elif self.dealer_hand.value == self.player_hand.value:
-                return 0
-            else:
+            elif player_val > dealer_val:
                 return -1
+            else:
+                return 0
+        elif player_has_5_charlie:
+            return 1
+        elif dealer_has_5_charlie:
+            return -1
+        
+        else:
+            if player_val > dealer_val:
+                return 1
+            elif dealer_val > player_val:
+                return -1
+            else:
+                return 0
     
     def is_action_valid(self, action):
         """

@@ -106,6 +106,7 @@ class Game:
         
         # Draw chip information
         self.ui_manager.draw_text(f"Chips: {self.player.chips}", self.resource_manager.fonts['primary_small'], self.GOLD, self.width - 250, 50)
+        self.ui_manager.draw_text(f"Current Bet: {self.current_bet}", self.resource_manager.fonts['primary_small'], self.GOLD, self.width // 2 - 100, 50)
         
         # Draw game message if any
         if self.game_message:
@@ -143,6 +144,7 @@ class Game:
             action = self.dealer_ai.get_action(state, valid_actions=valid_actions, training=False)
             
             if action == 0:  # HIT
+                self.resource_manager.play_sound('hit_card', maxtime=500)
                 self.dealer.hit(self.deck)
                 self.dealer_special_case = self.dealer.hand.special_cases()
                 self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
@@ -200,6 +202,7 @@ class Game:
                     elif event.type == pygame.MOUSEBUTTONDOWN:
                         if (self.width // 2 - 75 <= event.pos[0] <= self.width // 2 + 75 and
                             self.height // 2 + 150 <= event.pos[1] <= self.height // 2 + 200):
+                            self.resource_manager.play_sound('button_click', loop=False)
                             running = False
                             game_active = False
                 continue
@@ -239,6 +242,7 @@ class Game:
                                 self.deck.shuffle()
                                 # self.deck.fake_shuffle()
                                 
+                                self.resource_manager.play_sound('hit_card', maxtime=500)
                                 self.player.hit(self.deck)
                                 self.dealer.hit(self.deck)
                                 self.player.hit(self.deck)
@@ -249,6 +253,7 @@ class Game:
                                 
                                 if self.player_special_case is not None:
                                     # Player wins immediately
+                                    self.resource_manager.play_sound('win_sound', maxtime=1000)
                                     self.show_dealer_cards = True
                                     self.dealer_special_case = self.dealer.hand.special_cases()
                                     self.player.earn(int(2.5 * chip))
@@ -287,7 +292,6 @@ class Game:
                 if self.player.get_value() >= 16:
                     stand_clicked = self.ui_manager.draw_button("STAND", self.width - 250, deck_y + 220, 100, 50, self.RED, self.GRAY)
                 else:
-                    # Show message that player must hit
                     self.ui_manager.draw_text("Must HIT", self.font_small, self.RED, self.width - 250 + 50, deck_y + 240, center=True)
                     self.ui_manager.draw_text("(Value < 16)", self.font_small, self.RED, self.width - 250 + 50, deck_y + 265, center=True)
                 
@@ -301,6 +305,7 @@ class Game:
                         
                         # Check if clicked on deck
                         if deck_x <= mouse_x <= deck_x + 100 and deck_y <= mouse_y <= deck_y + 145:
+                            self.resource_manager.play_sound('hit_card', maxtime=500)
                             self.player.hit(self.deck)
                             self.player_special_case = self.player.hand.special_cases()
                             
@@ -312,6 +317,7 @@ class Game:
                         elif (self.player.get_value() >= 16 and 
                             self.width - 250 <= mouse_x <= self.width - 150 and 
                             deck_y + 220 <= mouse_y <= deck_y + 270):
+                            self.resource_manager.play_sound('button_click', loop=False)
                             self.waiting_for_action = False
             
             # Dealer's turn
@@ -336,6 +342,7 @@ class Game:
                         # Fallback to rule-based dealer
                         if self.player.is_bust():
                             while self.dealer.get_value() < 17 and self.dealer.hand.num_of_cards() < 5:
+                                self.resource_manager.play_sound('hit_card', maxtime=500)
                                 self.dealer.hit(self.deck)
                                 self.dealer_special_case = self.dealer.hand.special_cases()
                                 self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
@@ -344,6 +351,7 @@ class Game:
                         
                         elif self.player_special_case is None:
                             while self.dealer.get_value() <= self.player.get_value() and self.dealer.hand.num_of_cards() < 5:
+                                self.resource_manager.play_sound('hit_card', maxtime=500)
                                 self.dealer.hit(self.deck)
                                 self.dealer_special_case = self.dealer.hand.special_cases()
                                 self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
@@ -352,6 +360,7 @@ class Game:
                         
                         else:
                             while not self.dealer.is_bust() and self.dealer.hand.num_of_cards() < 5:
+                                self.resource_manager.play_sound('hit_card', maxtime=500)
                                 self.dealer.hit(self.deck)
                                 self.dealer_special_case = self.dealer.hand.special_cases()
                                 self.display_table(show_dealer=True, player_special_case=self.player_special_case, dealer_special_case=self.dealer_special_case)
@@ -399,15 +408,18 @@ class Game:
                 
                 # Determine result
                 if player_wins:
+                    self.resource_manager.play_sound('win_sound', maxtime=1000)
                     if self.player_special_case:
                         self.player.earn(int(2.5 * self.current_bet))
                     else:
                         self.player.earn(int(2 * self.current_bet))
                     self.result_message = 'Player wins!'
                 elif tie:
+                    self.resource_manager.play_sound('tie_sound', maxtime=1000)
                     self.player.earn(int(self.current_bet))
                     self.result_message = 'Tie!'
                 else:
+                    self.resource_manager.play_sound('lose_sound', maxtime=1000)
                     self.result_message = 'Dealer wins!'
                 
                 self.game_over_state = True
@@ -434,6 +446,7 @@ class Game:
                         # Play again clicked
                         if (self.width // 2 - 75 <= event.pos[0] <= self.width // 2 + 75 and
                             420 <= event.pos[1] <= 470):
+                            self.resource_manager.play_sound('button_click', loop=False)
                             if self.player.chips > 0:
                                 self.betting_phase = True
                                 self.game_over_state = False
@@ -446,6 +459,7 @@ class Game:
                         # Quit clicked
                         elif (self.width // 2 - 75 <= event.pos[0] <= self.width // 2 + 75 and
                               500 <= event.pos[1] <= 550):
+                            self.resource_manager.play_sound('button_click', loop=False)
                             running = False
                             game_active = False
         

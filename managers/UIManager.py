@@ -38,8 +38,9 @@ class UIManager:
         button_rect = pygame.Rect(x, y, width, height)
         
         if button_rect.collidepoint(mouse):
-            pygame.draw.rect(self.window, hover_color, button_rect, border_radius=10)
+            pygame.draw.rect(self.window, hover_color, button_rect, border_radius=10) 
             if click[0] == 1:
+                self.resource_manager.play_sound('button_click', loop=False)
                 if action:
                     action()
                 return True

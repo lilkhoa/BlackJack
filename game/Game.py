@@ -3,6 +3,7 @@ from entities.Dealer import Dealer
 from models.Deck import Deck
 from managers.ResoureManager import ResourceManager
 from managers.UIManager import UIManager
+from managers.Slider import Slider
 from config import settings
 from ai.agent import QLearningAgent
 import os, time, pygame
@@ -43,6 +44,11 @@ class Game:
         self.GOLD = settings.GOLD
         self.GRAY = settings.GRAY
         self.BLUE = settings.BLUE
+
+        # Load slider for betting
+        slider_x = (self.width - 400) // 2
+        slider_y = 350
+        self.bet_slider = Slider(slider_x, slider_y, 400, 20, 1, 100)
         
         # Load AI agent for dealer
         self.dealer_ai = QLearningAgent()
@@ -212,9 +218,19 @@ class Game:
                 self.win.blit(self.bg, (0, 0))
                 
                 # Show betting interface
+                self.bet_slider.set_max(self.player.chips)
+
                 self.ui_manager.draw_text(f'Chips: {self.player.chips}', self.font_medium, self.GOLD, self.width // 2, 200, center=True)
-                self.ui_manager.draw_text('Enter bet amount:', self.font_medium, self.WHITE, self.width // 2, 300, center=True)
-                self.ui_manager.draw_text(self.bet_input, self.font_large, self.GOLD, self.width // 2, 360, center=True)
+                self.ui_manager.draw_text('Select bet amount:', self.font_medium, self.WHITE, self.width // 2, 300, center=True)
+                self.bet_input = self.bet_slider.value
+                if self.bet_input == self.player.chips:
+                    self.ui_manager.draw_text(f'ALL IN', self.font_medium, self.GOLD, self.width // 2, 400, center=True)
+                else:
+                    self.ui_manager.draw_text(f'{self.bet_input}', self.font_large, self.GOLD, self.width // 2, 400, center=True)
+
+                self.bet_slider.draw(self.win)
+
+                self.ui_manager.draw_button("DEAL", self.width // 2 - 75, 500, 150, 50, self.GREEN, self.GRAY)
                 
                 if self.game_message:
                     self.ui_manager.draw_text(self.game_message, self.font_small, self.RED, self.width // 2, 450, center=True)
@@ -225,8 +241,10 @@ class Game:
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         return
-                    elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_RETURN and self.bet_input:
+                    self.bet_slider.handle_event(event)
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if (self.width // 2 - 75 <= event.pos[0] <= self.width // 2 + 75 and
+                            500 <= event.pos[1] <= 550):
                             try:
                                 chip = int(self.bet_input)
                                 self.player.bet(amount=chip)
@@ -272,10 +290,6 @@ class Game:
                             except InsufficientChipsError:
                                 self.game_message = "Not enough chips. Try again."
                                 self.bet_input = ""
-                        elif event.key == pygame.K_BACKSPACE:
-                            self.bet_input = self.bet_input[:-1]
-                        elif event.unicode.isdigit():
-                            self.bet_input += event.unicode
             
             # Player's turn
             elif game_active and not self.betting_phase and self.waiting_for_action:

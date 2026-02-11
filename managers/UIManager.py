@@ -57,7 +57,7 @@ class UIManager:
         
         while viewing_tutorial:
             self.window.blit(self.resource_manager.images['tutorial_img'], (0, 0))
-            back_clicked = self.draw_button("Back", 50, 50, 150, 50, self.colors['RED'], self.colors['GRAY'])
+            back_clicked = self.draw_button("Back", 50, 30, 150, 50, self.colors['RED'], self.colors['GRAY'])
             
             pygame.display.update()
             

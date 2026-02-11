@@ -20,7 +20,7 @@ class ResourceManager:
         self.images['bg'] = pygame.image.load('assets\\bg.jpg')
         self.images['bg'] = pygame.transform.scale(self.images['bg'], (settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
-        self.images['tutorial_img'] = pygame.image.load('assets\\tutorial.png')
+        self.images['tutorial_img'] = pygame.image.load('assets\\tutorial.jpg')
         self.images['tutorial_img'] = pygame.transform.scale(self.images['tutorial_img'], (settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
         self.images['card_back'] = pygame.image.load('assets\\cards\\cardback.png')

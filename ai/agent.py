@@ -1,7 +1,3 @@
-"""
-Q-Learning Agent for Blackjack
-"""
-
 import numpy as np
 import random
 import os
@@ -41,7 +37,7 @@ class QLearningAgent:
         
         # Initialize Q-table: state -> [Q(s,HIT), Q(s,STAND)]
         # State dimensions: [player_value, dealer_showing, num_cards, usable_ace]
-        self.q_table = np.zeros((32, 12, 6, 2, 2))  # Add padding for indexing convenience
+        self.q_table = np.zeros((32, 12, 6, 2, 2))
         
     def get_action(self, state, valid_actions=None, training=True):
         """
@@ -57,23 +53,19 @@ class QLearningAgent:
         """
         player_value, dealer_showing, num_cards, usable_ace = state
         
-        # Clip values to stay within bounds
         player_value = max(0, min(31, player_value))
         dealer_showing = max(0, min(11, dealer_showing))
         num_cards = max(0, min(5, num_cards))
         usable_ace = int(usable_ace)
         
-        # Epsilon-greedy: exploration vs exploitation
         if training and random.random() < self.epsilon:
-            # Explore: choose random action
+            # Explore: random valid action
             if valid_actions:
                 return random.choice(valid_actions)
             return random.randint(0, 1)
         else:
             # Exploit: choose best action from Q-table
             q_values = self.q_table[player_value, dealer_showing, num_cards, usable_ace]
-            
-            # If valid_actions provided, only consider those
             if valid_actions:
                 if len(valid_actions) == 1:
                     return valid_actions[0]
@@ -87,7 +79,7 @@ class QLearningAgent:
         """
         Update Q-table using Q-learning update rule
         
-        Q(s,a) = Q(s,a) + α * [reward + γ * max(Q(s',a')) - Q(s,a)]
+        Q(s,a) = Q(s,a) + alpha * [reward + gamma * max(Q(s',a')) - Q(s,a)]
         
         Args:
             state (tuple): Current state
@@ -96,7 +88,6 @@ class QLearningAgent:
             next_state (tuple): Next state
             done (bool): Whether episode is done
         """
-        # Extract and clip state values
         player_value, dealer_showing, num_cards, usable_ace = state
         player_value = max(0, min(31, player_value))
         dealer_showing = max(0, min(11, dealer_showing))
@@ -110,7 +101,6 @@ class QLearningAgent:
         if done:
             target_q = reward
         else:
-            # Extract and clip next state values
             next_player_value, next_dealer_showing, next_num_cards, next_usable_ace = next_state
             next_player_value = max(0, min(31, next_player_value))
             next_dealer_showing = max(0, min(11, next_dealer_showing))
@@ -121,8 +111,7 @@ class QLearningAgent:
             target_q = reward + self.gamma * max_next_q
         
         # Update Q-value
-        self.q_table[player_value, dealer_showing, num_cards, usable_ace, action] += \
-            self.lr * (target_q - current_q)
+        self.q_table[player_value, dealer_showing, num_cards, usable_ace, action] += self.lr * (target_q - current_q)
     
     def decay_epsilon(self):
         """Decay epsilon after each episode"""

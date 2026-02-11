@@ -1,9 +1,3 @@
-"""
-Training script for Q-Learning Blackjack Agent
-
-Run this file with: python ai/train.py
-"""
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -54,16 +48,15 @@ def train_agent(num_episodes=100000, save_interval=10000):
         done = False
         
         while not done:
-            # Determine valid actions based on game rules
             valid_actions = []
             if env.player_hand.value >= 16:
-                valid_actions.append(1)  # Can STAND
+                valid_actions.append(1)
             if env.player_hand.num_of_cards() < 5 and env.player_hand.value <= 21:
-                valid_actions.append(0)  # Can HIT
+                valid_actions.append(0)
             
             # If no valid actions or player must hit (value < 16), force HIT
             if not valid_actions or env.player_hand.value < 16:
-                valid_actions = [0]  # Must HIT
+                valid_actions = [0]
             
             # Get action from agent
             action = agent.get_action(state, valid_actions=valid_actions, training=True)
@@ -174,17 +167,16 @@ def test_agent(num_games=1000):
         done = False
         
         while not done:
-            # Determine valid actions
             valid_actions = []
             if env.player_hand.value >= 16:
-                valid_actions.append(1)  # Can STAND
+                valid_actions.append(1)
             if env.player_hand.num_of_cards() < 5 and env.player_hand.value <= 21:
-                valid_actions.append(0)  # Can HIT
+                valid_actions.append(0)
             
             if not valid_actions or env.player_hand.value < 16:
-                valid_actions = [0]  # Must HIT
+                valid_actions = [0]
             
-            # Get action (no exploration, pure exploitation)
+            # Get action
             action = agent.get_action(state, valid_actions=valid_actions, training=False)
             
             # Take action
@@ -210,9 +202,6 @@ def test_agent(num_games=1000):
 
 
 if __name__ == "__main__":
-    # Train the agent
     train_agent(num_episodes=100000, save_interval=10000)
-    
-    # Test the trained agent
     print("\n\n")
     test_agent(num_games=10000)

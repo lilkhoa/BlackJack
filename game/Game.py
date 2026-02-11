@@ -32,6 +32,9 @@ class Game:
         self.card_back = self.resource_manager.images['card_back']
         self.card_images = self.resource_manager.card_images
 
+        # Load sounds
+        self.resource_manager.play_sound('bg_music', loop=True)
+
         # Load UI
         self.ui_manager = UIManager(self.win, ResourceManager())
         self.WHITE = settings.WHITE
@@ -234,6 +237,7 @@ class Game:
                                 self.player.clear_hand()
                                 self.dealer.clear_hand()
                                 self.deck.shuffle()
+                                # self.deck.fake_shuffle()
                                 
                                 self.player.hit(self.deck)
                                 self.dealer.hit(self.deck)

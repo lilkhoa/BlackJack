@@ -34,7 +34,6 @@ class BlackjackEnv:
         self.deck.shuffle()
         self.done = False
         
-        # Deal initial cards
         self.player_hand.add_card(self.deck.deal())
         self.dealer_hand.add_card(self.deck.deal())
         self.player_hand.add_card(self.deck.deal())
@@ -78,12 +77,10 @@ class BlackjackEnv:
         if self.done:
             raise Exception("Game is already done. Call reset() to start a new game.")
         
-        # Check if player has initial special case (2 cards - BlackJack or DoubleAces)
-        # This should win immediately before any action
+        # Check if player has initial special case
         if self.player_hand.num_of_cards() == 2:
             player_special = self.player_hand.special_cases()
             if player_special is not None:
-                # Player wins immediately with 2-card special case
                 self.done = True
                 return self._get_state(), 1, self.done
         
@@ -106,7 +103,6 @@ class BlackjackEnv:
                 reward = self._play_dealer_and_get_reward(player_special_case=player_special)
                 return self._get_state(), reward, self.done
             
-            # Game continues
             return self._get_state(), 0, self.done
         
         # ACTION: STAND
@@ -119,21 +115,17 @@ class BlackjackEnv:
     def _play_dealer_and_get_reward(self, player_special_case=None):
         """
         Let dealer play and determine the reward
-        Matches the exact logic from Game.py
         
         Returns:
             int: 1 = player wins, 0 = tie, -1 = player loses
         """
-        # Check dealer special case first
         dealer_special = self.dealer_hand.special_cases()
         
         if dealer_special is not None:
-            # Dealer has special case - dealer wins immediately
             return -1
         
         # Player bust scenario
         if self.player_hand.value > 21:
-            # Dealer plays until value >= 17 or reaches 5 cards
             while self.dealer_hand.value < 17 and self.dealer_hand.num_of_cards() < 5:
                 self.dealer_hand.add_card(self.deck.deal())
                 dealer_special = self.dealer_hand.special_cases()
@@ -141,13 +133,12 @@ class BlackjackEnv:
                     break
             
             if self.dealer_hand.value > 21:
-                return 0  # Tie - both bust
+                return 0
             else:
-                return -1  # Dealer wins
+                return -1
         
         # Player didn't bust
         elif player_special_case is None:
-            # Normal gameplay - dealer tries to beat player's value
             while self.dealer_hand.value <= self.player_hand.value and self.dealer_hand.num_of_cards() < 5:
                 self.dealer_hand.add_card(self.deck.deal())
                 dealer_special = self.dealer_hand.special_cases()
@@ -156,26 +147,23 @@ class BlackjackEnv:
             
             # Determine winner
             if self.dealer_hand.value > 21:
-                return 1  # Player wins - dealer bust
+                return 1
             else:
-                return -1  # Dealer wins (dealer got higher value or tied and won)
+                return -1
         
         else:
-            # Player has special case (5-card hand)
-            # Dealer hits until bust or reaches 5 cards
             while not self.dealer_hand.value > 21 and self.dealer_hand.num_of_cards() < 5:
                 self.dealer_hand.add_card(self.deck.deal())
                 dealer_special = self.dealer_hand.special_cases()
                 if dealer_special:
                     break
             
-            # Special winning logic for 5-card hands (matches Game.py line 393)
             if self.dealer_hand.value > 21 or self.player_hand.value < self.dealer_hand.value:
-                return 1  # Player wins
+                return 1
             elif self.dealer_hand.value == self.player_hand.value:
-                return 0  # Tie
+                return 0
             else:
-                return -1  # Dealer wins
+                return -1
     
     def is_action_valid(self, action):
         """
@@ -187,11 +175,8 @@ class BlackjackEnv:
         Returns:
             bool: True if action is valid
         """
-        # Can't stand if player value < 16
         if action == 1 and self.player_hand.value < 16:
             return False
-        
-        # Can't hit if player has 5 cards or is bust
         if action == 0 and (self.player_hand.num_of_cards() >= 5 or self.player_hand.value > 21):
             return False
         

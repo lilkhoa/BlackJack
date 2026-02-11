@@ -1,4 +1,3 @@
-from models.Deck import Deck
 from config import settings
 
 class Hand:
@@ -9,17 +8,7 @@ class Hand:
     
     def add_card(self,card):
         self.cards.append(card)
-
-        if card.rank != settings.ranks[-1]:
-            self.value += settings.values[card.rank]
-        else:
-            self.value += self.adjust_for_ace()
-    
-    def adjust_for_ace(self):
-        if self.value + 11 <= 21:
-            return 11
-        else:
-            return 1
+        self._cal_value()
         
     def num_of_cards(self):
         return len(self.cards)
@@ -39,6 +28,21 @@ class Hand:
                 self.value = sum
                 return f'5-Card Charlie ({sum})'
         return None
+    
+    def _cal_value(self):
+        total = 0
+        aces = 0
+        
+        for card in self.cards:
+            if card.rank == 'Ace':
+                aces += 1
+            total += settings.values[card.rank]
+        
+        while total > 21 and aces:
+            total -= 10
+            aces -= 1
+        
+        self.value = total
     
     def clear(self):
         self.cards = []

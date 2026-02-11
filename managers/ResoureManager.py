@@ -6,6 +6,7 @@ class ResourceManager:
         self.card_images = {}
         self.fonts = {}
         self.images = {}
+        self.sounds = {}
         self.load_resources()
 
     def load_resources(self):
@@ -27,6 +28,12 @@ class ResourceManager:
 
         # Load card images
         self._load_card_images()
+
+        # Load sounds
+        # Background music
+        bg_music = pygame.mixer.Sound('assets\\sounds\\background\\bg.mp3')
+        bg_music.set_volume(0.5)
+        self.sounds['bg_music'] = bg_music
 
     def _load_card_images(self):
         """Load all card images from assets folder"""
@@ -56,3 +63,13 @@ class ResourceManager:
                     self.card_images[f"{rank} of {suit}"] = img
                 except:
                     print(f"Error loading: {path}")
+
+    def play_sound(self, sound_key, loop=False):
+        """Play a sound effect"""
+        if sound_key in self.sounds:
+            self.sounds[sound_key].play(-1 if loop else 0)
+
+    def stop_sound(self, sound_key):
+        """Stop a sound effect"""
+        if sound_key in self.sounds:
+            self.sounds[sound_key].stop()

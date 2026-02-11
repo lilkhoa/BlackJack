@@ -11,7 +11,8 @@ class UIManager:
             'BLACK': settings.BLACK,
             'GOLD': settings.GOLD,
             'GRAY': settings.GRAY,
-            'BLUE': settings.BLUE
+            'BLUE': settings.BLUE,
+            'RED': settings.RED
         }
 
     def draw_card(self, card, x, y):
@@ -54,7 +55,7 @@ class UIManager:
         viewing_tutorial = True
         
         while viewing_tutorial:
-            self.window.blit(self.resource_manager.images['tutorial'], (0, 0))
+            self.window.blit(self.resource_manager.images['tutorial_img'], (0, 0))
             back_clicked = self.draw_button("Back", 50, 50, 150, 50, self.colors['RED'], self.colors['GRAY'])
             
             pygame.display.update()

@@ -25,19 +25,30 @@ class Hand:
         return None
     
     def _cal_value(self):
-        total = 0
-        aces = 0
-        
-        for card in self.cards:
-            if card.rank == 'Ace':
-                aces += 1
-            total += settings.values[card.rank]
-        
-        while total > 21 and aces:
-            total -= 10
-            aces -= 1
-        
-        self.value = total
+        if len(self.cards) >= 4:
+            self.value = sum(settings.values[card.rank] for card in self.cards)
+        else:
+            total = 0
+            aces = 0
+            
+            for card in self.cards:
+                if card.rank == 'Ace':
+                    aces += 1
+                else:
+                    total += settings.values[card.rank]
+
+            if aces == 0:
+                self.value = total
+            elif aces == 1:
+                if total + 11 <= 21:
+                    self.value = total + 11
+                elif total + 10 <= 21:
+                    self.value = total + 10
+                else:
+                    self.value = total + 1
+            else:
+                self.value = total + aces
+            
     
     def clear(self):
         self.cards = []

@@ -1,4 +1,5 @@
 import pygame
+import os
 from config import settings
 
 class ResourceManager:
@@ -10,20 +11,25 @@ class ResourceManager:
         self.load_resources()
 
     def load_resources(self):
-        # Load fonts 
-        self.fonts['primary_large'] = pygame.font.Font('assets\\fonts\\primary-font.ttf', 48)
-        self.fonts['primary_medium'] = pygame.font.Font('assets\\fonts\\primary-font.ttf', 36)
-        self.fonts['primary_small'] = pygame.font.Font('assets\\fonts\\primary-font.ttf', 24)
-        self.fonts['chips'] = pygame.font.Font('assets\\fonts\\chips-font.ttf', 24)
+        # Load fonts
+        primary_font_path = os.path.join('assets', 'fonts', 'primary-font.ttf')
+        chip_font_path = os.path.join('assets', 'fonts', 'chips-font.ttf')
+        self.fonts['primary_large'] = pygame.font.Font(primary_font_path, 48)
+        self.fonts['primary_medium'] = pygame.font.Font(primary_font_path, 36)
+        self.fonts['primary_small'] = pygame.font.Font(primary_font_path, 24)
+        self.fonts['chips'] = pygame.font.Font(chip_font_path, 24)
 
         # Load images
-        self.images['bg'] = pygame.image.load('assets\\bg.jpg')
+        bg_path = os.path.join('assets', 'bg.jpg')
+        self.images['bg'] = pygame.image.load(bg_path)
         self.images['bg'] = pygame.transform.scale(self.images['bg'], (settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
-        self.images['tutorial_img'] = pygame.image.load('assets\\tutorial.jpg')
+        tutorial_path = os.path.join('assets', 'tutorial.jpg')
+        self.images['tutorial_img'] = pygame.image.load(tutorial_path)
         self.images['tutorial_img'] = pygame.transform.scale(self.images['tutorial_img'], (settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
-        self.images['card_back'] = pygame.image.load('assets\\cards\\cardback.png')
+        card_back_path = os.path.join('assets', 'cards', 'cardback.png')
+        self.images['card_back'] = pygame.image.load(card_back_path)
         self.images['card_back'] = pygame.transform.scale(self.images['card_back'], (100, 145))
 
         # Load card images
@@ -31,32 +37,38 @@ class ResourceManager:
 
         # Load sounds
         # Background music
-        bg_music = pygame.mixer.Sound('assets\\sounds\\background\\bg.mp3')
+        bg_music_path = os.path.join('assets', 'sounds', 'background', 'bg.mp3')
+        bg_music = pygame.mixer.Sound(bg_music_path)
         bg_music.set_volume(0.5)
         self.sounds['bg_music'] = bg_music
 
         # Button click
-        button_click = pygame.mixer.Sound('assets\\sounds\\button_press.mp3')
+        button_click_path = os.path.join('assets', 'sounds', 'button_press.mp3')
+        button_click = pygame.mixer.Sound(button_click_path)
         button_click.set_volume(0.7)
         self.sounds['button_click'] = button_click
 
         # Hit card
-        hit_card = pygame.mixer.Sound('assets\\sounds\\hit_card.mp3')
+        hit_card_path = os.path.join('assets', 'sounds', 'hit_card.mp3')
+        hit_card = pygame.mixer.Sound(hit_card_path)
         hit_card.set_volume(0.7)
         self.sounds['hit_card'] = hit_card
 
         # Win sound
-        win_sound = pygame.mixer.Sound('assets\\sounds\\win.wav')
+        win_sound_path = os.path.join('assets', 'sounds', 'win.wav')
+        win_sound = pygame.mixer.Sound(win_sound_path)
         win_sound.set_volume(0.7)
         self.sounds['win_sound'] = win_sound
 
         # Lose sound
-        lose_sound = pygame.mixer.Sound('assets\\sounds\\lose.wav')
+        lose_sound_path = os.path.join('assets', 'sounds', 'lose.wav')
+        lose_sound = pygame.mixer.Sound(lose_sound_path)
         lose_sound.set_volume(0.7)
         self.sounds['lose_sound'] = lose_sound
 
         # Tie sound
-        tie_sound = pygame.mixer.Sound('assets\\sounds\\tie.wav')
+        tie_sound_path = os.path.join('assets', 'sounds', 'tie.wav')
+        tie_sound = pygame.mixer.Sound(tie_sound_path)
         tie_sound.set_volume(0.7)
         self.sounds['tie_sound'] = tie_sound
 
@@ -80,7 +92,7 @@ class ResourceManager:
             for suit in settings.suits:
                 rank_folder = rank_map[rank]
                 file_name = f"{rank_map[rank]}_of_{suit_map[suit]}.png"
-                path = f"assets\\cards\\{rank_folder}\\{file_name}"
+                path = os.path.join('assets', 'cards', rank_folder, file_name)
                 
                 try:
                     img = pygame.image.load(path)

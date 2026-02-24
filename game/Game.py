@@ -429,7 +429,7 @@ class Game:
                         self.player.earn(int(2 * self.current_bet))
                     self.result_message = 'Player wins!'
                 elif tie:
-                    self.resource_manager.play_sound('tie_sound', maxtime=1000)
+                    self.resource_manager.play_sound('tie_sound', maxtime=2000)
                     self.player.earn(int(self.current_bet))
                     self.result_message = 'Tie!'
                 else:

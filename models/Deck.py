@@ -14,9 +14,9 @@ class Deck:
         random.shuffle(self.cards)
 
     def fake_shuffle(self):
-        self.cards[0] = Card('Hearts', 'Ace')
-        self.cards[2] = Card('Spades', 'Ace')
-        pass
+        self.cards[0] = Card('Hearts', 'Six')
+        self.cards[2] = Card('Spades', 'Five')
+        self.cards[4] = Card('Clubs', 'Ace')
 
     def deal(self):
         dealt_card = self.cards.pop(0)
